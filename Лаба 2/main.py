@@ -1,14 +1,13 @@
 import pygame
 import random
-import collections
 import time
-from queue import Empty, PriorityQueue
 from map import Map
 from bullet import Bullet
+from algorithms import SA
+
 
 pygame.init()
 win = pygame.display.set_mode((1500, 900))
-
 pygame.display.set_caption('Tanks')
 
 
@@ -140,7 +139,6 @@ def isIn(t, x, y):
     return False
       
 def drawWindow(allTime):
-    global highlights
     win.fill((0, 0, 0))
     for row in range(9):
         for coll in range(15):
@@ -149,18 +147,17 @@ def drawWindow(allTime):
     colors = [(0, 0, 255), (0, 255, 0), (255, 0, 0)]
     radius = [20, 15, 10]
     for i in range(3):
-        for pair in highlights[i]:
+        for pair in SA.getHighlights()[i]:
             pygame.draw.circle(win, colors[i], (pair[0] * 100 + 50, pair[1] * 100 + 50), radius[i])
 
     f = pygame.font.SysFont("Arial", 60)
-    if (algorithm == 0):
+    if (SA.getAlgorithm() == 0):
         textTime = f.render("DFS time: " + str(allTime), True, (64, 0, 128))
-    elif (algorithm == 1):
+    elif (SA.getAlgorithm() == 1):
         textTime = f.render("BFS time: " + str(allTime), True, (64, 0, 128))
-    elif (algorithm == 2):
+    elif (SA.getAlgorithm() == 2):
         textTime = f.render("UCS time: " + str(allTime), True, (64, 0, 128))
     
-
 
     player.draw(win)
     
@@ -183,7 +180,6 @@ def drawWindow(allTime):
 def drawMenu():
     win.fill((0, 0, 0))
     win.blit(bgMenu, (0, 0))
-
 
     f = pygame.font.SysFont("Arial", 60)
     position = 700
@@ -317,214 +313,9 @@ def isMarked(marked, x, y):
     else:
         return 0
 
-def dfs(startX, startY):
-    stack = []
-    stack.append((startX // 100, startY // 100))
 
-    marked = []
-    
-    for i in range(9):
-        marked.append([])
-        for j in range(15):
-            marked[i].append(0)
-    
-    marked[startY // 100][startX // 100] = 1
-
-    while len(stack) != 0:
-        u = True
-
-        x, y = stack[-1]
-
-        if map.checkObstacle(x * 100, y * 100, 1, 1) == 0:
-            for tank in enemies:
-                if tank.x // 100 == x and tank.y // 100 == y:
-                    return stack
-
-
-            if isMarked(marked, x + 1, y) != 1:
-                marked[y][x + 1] = 1
-                stack.append((x + 1, y))
-                u = False
-            if isMarked(marked, x - 1, y) != 1:
-                marked[y][x - 1] = 1
-                stack.append((x - 1, y))
-                u = False
-            if isMarked(marked, x, y + 1) != 1:
-                marked[y + 1][x] = 1
-                stack.append((x, y + 1))
-                u = False
-            if isMarked(marked, x, y - 1) != 1:
-                marked[y - 1][x] = 1
-                stack.append((x, y - 1))
-                u = False
-
-        if u == True:
-            stack.pop()
-
-def DFS(x, y):
-    global marked
-    global enemies
-    global map
-    global highlights
-    global tanksFounded
-
-    marked.append((x, y))
-
-    if map.checkObstacle(x * 100, y * 100, 1, 1) != 0:
-        return -1
-
-    for tank in enemies:
-        if (tank.x + 50) // 100 == x and (tank.y + 50) // 100 == y:
-            if not (tank in tanksFounded):
-                tanksFounded.append(tank)
-                highlights[len(tanksFounded) - 1].append((x, y))
-                return len(tanksFounded) - 1
-            else:
-                return -1
-
-
-    status = -1
-
-    if not ((x + 1, y) in marked) and status == -1:
-        status = DFS(x + 1, y)
-    if not ((x - 1, y) in marked) and status == -1:
-        status = DFS(x - 1, y)
-    if not ((x, y + 1) in marked) and status == -1:
-        status = DFS(x, y + 1)
-    if not ((x, y - 1) in marked) and status == -1:
-        status = DFS(x, y - 1)
-
-
-    if status != -1:
-        highlights[status].append((x, y))
-        return status
-    return -1
-
-def BFS(startX, startY):
-    global enemies
-    global map
-    global highlights
-    global tanksFounded
-
-    queue = collections.deque([(startX, startY)])
-    visited = set()
-    history = {(startX, startY) : (-1, -1)}
-
-    visited.add((startX, startY))
-
-    u = True
-
-    while queue and u == True:
-        x, y = queue.popleft()
-        
-        if map.checkObstacle(x * 100, y * 100, 1, 1) != 0:
-            continue
-
-        for tank in enemies:
-            if (tank.x + 50) // 100 == x and (tank.y + 50) // 100 == y:
-                if tank not in tanksFounded:
-                    tanksFounded.append(tank)
-                    highlights[len(tanksFounded) - 1].append((x, y))
-                    u = False
-                
-                continue
-
-
-        if (x + 1, y) not in visited:
-            visited.add((x + 1, y))
-            queue.append((x + 1, y))
-            history[(x + 1, y)] = (x, y)
-        if (x - 1, y) not in visited:
-            visited.add((x - 1, y))
-            queue.append((x - 1, y))
-            history[(x - 1, y)] = (x, y)
-        if (x, y + 1) not in visited:
-            visited.add((x, y + 1))
-            queue.append((x, y + 1))
-            history[(x, y + 1)] = (x, y)
-        if (x, y - 1) not in visited:
-            visited.add((x, y - 1))
-            queue.append((x, y - 1))
-            history[(x, y - 1)] = (x, y)
-
-    if len(highlights[len(tanksFounded) - 1]) == 0:
-        return
-        
-    pair = highlights[len(tanksFounded) - 1][0]
-
-    while history[pair] != (-1, -1):
-        pair = history[pair]
-        highlights[len(tanksFounded) - 1].append(pair)
-
-def UCS(startX, startY):
-    global enemies
-    global map
-    global highlights
-    global tanksFounded
-
-    queue = PriorityQueue()
-    queue.put([0, (startX, startY)])
-
-    visited = set()
-    history = {(startX, startY) : (-1, -1)}
-
-    u = True
-
-    while not queue.empty() and u:
-        
-        cost, pair = queue.get()
-        x, y = pair
-
-        if map.checkObstacle(x * 100, y * 100, 1, 1) != 0:
-            visited.add((x, y))
-            continue
-
-        for tank in enemies:
-            if (tank.x + 50) // 100 == x and (tank.y + 50) // 100 == y:
-                if tank not in tanksFounded:
-                    tanksFounded.append(tank)
-                    highlights[len(tanksFounded) - 1].append((x, y))
-                    u = False
-                
-                visited.add((x, y))
-                continue
-
-        if (x, y) not in visited:
-            queue.put([cost + 1, (x + 1, y)])
-            if history.get((x + 1, y)) is None:
-                history[(x + 1, y)] = (x, y)
-
-            queue.put([cost + 1, (x - 1, y)])
-            if history.get((x - 1, y)) is None:
-                history[(x - 1, y)] = (x, y)
-
-            queue.put([cost + 1, (x, y + 1)])
-            if history.get((x, y + 1)) is None:
-                history[(x, y + 1)] = (x, y)
-
-            queue.put([cost + 1, (x, y - 1)])
-            if history.get((x, y - 1)) is None:
-                history[(x, y - 1)] = (x, y)
-
-        visited.add((x, y))
-
-
-    if len(highlights[len(tanksFounded) - 1]) == 0:
-        return
-
-    pair = highlights[len(tanksFounded) - 1][0]
-
-    while history[pair] != (-1, -1):
-        pair = history[pair]
-        highlights[len(tanksFounded) - 1].append(pair)
- 
-    
 
 lives, bullets, map, player, enemies = setLevel(4)
-
-marked = []
-highlights = [[],[],[]]
-tanksFounded = []
 
 
 run = True
@@ -532,7 +323,7 @@ isMainMenu = True
 whyYouInMenu = 0
 selectedLevel = 1
 currentLevel = 1
-algorithm = 0
+
 
 clock = pygame.time.Clock()
 
@@ -576,8 +367,8 @@ while run:
                     isMainMenu = True
                     continue
                 if event.key == pygame.K_z:
-                    algorithm += 1
-                    algorithm %= 3
+                    SA.nextAlgorithm()
+
 
         keys = pygame.key.get_pressed()
 
@@ -597,24 +388,15 @@ while run:
 
         processTanks()
 
-        highlights = [[],[],[]]
-        tanksFounded = []
-
 
         startTime = time.time()
 
-        for i in range (len(enemies)):
-            marked.clear()
-
-            if (algorithm == 0):
-                DFS((player.x + 50) // 100, (player.y + 50) // 100)
-            elif (algorithm == 1):
-                BFS((player.x + 50) // 100, (player.y + 50) // 100)
-            elif (algorithm == 2):
-                UCS((player.x + 50) // 100, (player.y + 50) // 100)
+        SA.search(enemies, map, player)
         
         allTime = time.time() - startTime
-        if len(enemies) == 0:
+
+
+        if len(enemies) == 0:   
             isMainMenu = True
             whyYouInMenu = 3
         
