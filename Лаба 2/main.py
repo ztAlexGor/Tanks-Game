@@ -205,18 +205,22 @@ def drawMenu():
     text1 = f.render("Level 1", (0, 255, 0), color)
     text2 = f.render("Level 2", (0, 255, 0), color)
     text3 = f.render("Level 3", (0, 255, 0), color)
+    text4 = f.render("Random Level", (0, 255, 0), color)
 
     if selectedLevel == 1:
         text1 = f.render("Level 1", (0, 255, 0), (255, 255, 255))
     elif selectedLevel == 2:
         text2 = f.render("Level 2", (0, 255, 0), (255, 255, 255))
-    else:
+    elif selectedLevel == 3:
         text3 = f.render("Level 3", (0, 255, 0), (255, 255, 255))
+    elif selectedLevel == 4:
+        text4 = f.render("Random Level", (0, 255, 0), (255, 255, 255))
     
     win.blit(text, (position, 235))
     win.blit(text1, (700, 330))
     win.blit(text2, (700, 430))
     win.blit(text3, (700, 530))
+    win.blit(text4, (620, 625))
 
     pygame.display.update()
 
@@ -516,21 +520,6 @@ def UCS(startX, startY):
  
     
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 lives, bullets, map, player, enemies = setLevel(4)
 
 marked = []
@@ -560,7 +549,7 @@ while run:
             if event.type == pygame.KEYDOWN:
                 if (event.key == pygame.K_UP or event.key == pygame.K_w) and selectedLevel > 1:
                     selectedLevel -= 1
-                elif (event.key == pygame.K_DOWN or event.key == pygame.K_s) and selectedLevel < 3:
+                elif (event.key == pygame.K_DOWN or event.key == pygame.K_s) and selectedLevel < 4:
                     selectedLevel += 1
                 elif event.key == pygame.K_ESCAPE and whyYouInMenu == 1:
                     isMainMenu = False
